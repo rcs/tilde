@@ -1,0 +1,126 @@
+#!/bin/bash
+
+TILDE_DIR="$HOME/.tilde"
+MODULE_DIR="$TILDE_DIR/modules"
+ENABLED_DIR="$TILDE_DIR/enabled"
+MR_CONFIG="$TILDE_DIR/mrconfig"
+BIN_DIR="$TILDE_DIR/bin"
+
+MR_REPO="git://git.kitenet.net/mr"
+MR_DIR="$TILDE_DIR/mr"
+MR_LIB="$MR_DIR/lib"
+MR="$MR_DIR/mr -c $MR_CONFIG"
+
+
+usage () {
+	cat <<EOF
+Usage: $0 <command> <args..>
+
+Commands:
+init		Initialize tilde directories, git clone mr, and add mrconfig to .mrtrust
+EOF
+}
+
+init () {
+	echo "Creating directories.."
+	mkdir -p "$TILDE_DIR"
+	mkdir -p "$MODULE_DIR"
+	mkdir -p "$ENABLED_DIR"
+	mkdir -p "$BIN_DIR"
+
+	echo "Cloning mr from $MR_REPO to $MR_DIR"
+	if [ ! -e "$MR_DIR" ]; then
+		git clone "$MR_REPO" "$MR_DIR"
+	else
+		echo "W: $MR_DIR exists, not cloning mr repo into it"
+	fi
+
+	echo "Initializing tilde mrconfig.."
+	cat > $MR_CONFIG <<MR
+[DEFAULT]
+lib = cat $MR_LIB/* 
+include = cat $ENABLED_DIR/*
+fixups = BAD_FILES=(. .. .git .svn) 
+	 for file in .*; do 
+		bad=""; 
+		for i in ${BAD_FILES[@]}; do 
+			if [[ "$file" == "$i" ]]; then 
+				bad="true"; 
+				break; 
+			fi; 
+		done ; 
+		if [[ "$bad" = "true" ]]; then 
+			continue; 
+		else
+			echo "Linking $file" ; 
+		fi;  
+	 done
+MR
+	echo "Initializing .mrtrust.."
+	if ! grep -e "^$MR_CONFIG$" $HOME/.mrtrust 2>&1 >/dev/null; then
+		echo "$MR_CONFIG" >> ~/.mrtrust
+	fi
+
+}
+
+add () {
+	local module=$1
+
+	if [ -e $ENABLED_DIR/$module ]; then
+		echo "W: Module $module already enabled"
+		exit 2
+	elif [ -e $MODULE_DIR/$module ]; then
+		ln -s ../modules/$module $ENABLED_DIR/$module
+	else
+		echo "E: Couldn't find module $module ( $MODULE_DIR/$module) "
+		exit 2
+	fi
+}
+
+checkout () {
+	$MR checkout
+}
+
+mr () {
+	$MR $@
+}
+
+
+
+
+
+# Command line processing
+while getopts "v" opt; do
+	echo -n
+done
+shift $(($OPTIND - 1))
+
+
+if [[ "$1" = "" ]]; then
+	echo "ERROR: Must specify a command."
+	usage
+	exit 1
+fi
+
+case $1 in 
+	init)
+		init
+		;;
+	add)
+		shift
+		add $@
+		;;
+	checkout)
+		checkout
+		;;
+	mr)
+		shift
+		mr $@
+		;;
+	*)
+		echo "Argument $1 not understood."
+		usage
+		exit 2
+		;;
+esac
+
