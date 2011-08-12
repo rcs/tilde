@@ -1,0 +1,48 @@
+#!/bin/bash
+
+TILDE_DIR="$HOME/.tilde"
+MANIFEST_DIR="$HOME/.tilde/manifests"
+REPO_DIR="$HOME/.tilde/repos"
+BASENAME=$1
+
+BAD_FILES=". .. .git .gitignore .mrconfig .svn"
+
+manifest=$MANIFEST_DIR/$BASENAME
+if [ -e $manifest ]; then
+	echo "E: Manifest $manifest already exists"
+	exit
+fi
+
+if [ ! -d "$REPO_DIR/$BASENAME" ]; then
+	echo "E: Couldn't find directory $REPO_DIR/$BASENAME"
+	exit
+fi
+
+to_link=()
+for file in "$REPO_DIR/$BASENAME"/.*; do 
+	base_file=$(basename $file)
+	# Check to make sure the filename isn't in the exclude list
+	bad=""; 
+	for excluded in $BAD_FILES; do 
+		if [[ $(basename "$file") = "$excluded" ]]; then 
+			bad="true"; 
+			break; 
+		fi; 
+	done ; 
+	if [[ "$bad" = "true" ]]; then 
+		continue; 
+	fi
+	# Check existing manifests for file
+	matching_manifest=$(grep -l -e "^$base_file$" $MANIFEST_DIR/*)
+
+	if [[ "$matching_manifest" = "" ]]; then
+		to_link=("${to_link[@]}" $base_file)
+	else
+		echo "E: Found matching $base_file in manifest $matching_manifest, aborting"
+		exit 2
+	fi
+done
+for linker in ${to_link[@]}; do
+	echo ln -s $linker $HOME
+	echo "$linker" >> $manifest
+done

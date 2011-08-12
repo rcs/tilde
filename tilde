@@ -3,6 +3,7 @@
 TILDE_DIR="$HOME/.tilde"
 MODULE_DIR="$TILDE_DIR/modules"
 ENABLED_DIR="$TILDE_DIR/enabled"
+MANIFEST_DIR="$TILDE_DIR/manifests"
 MR_CONFIG="$TILDE_DIR/mrconfig"
 BIN_DIR="$TILDE_DIR/bin"
 
@@ -18,6 +19,10 @@ Usage: $0 <command> <args..>
 
 Commands:
 init		Initialize tilde directories, git clone mr, and add mrconfig to .mrtrust
+add <module>	Link in <module> to be pulled in 
+checkout	Checkout existing repos (runs initialization commands e.g. linking to homedir)
+mr		passthru to the tilde configged mr
+
 EOF
 }
 
@@ -27,6 +32,7 @@ init () {
 	mkdir -p "$MODULE_DIR"
 	mkdir -p "$ENABLED_DIR"
 	mkdir -p "$BIN_DIR"
+	mkdir -p "$MANIFEST_DIR"
 
 	echo "Cloning mr from $MR_REPO to $MR_DIR"
 	if [ ! -e "$MR_DIR" ]; then
@@ -38,23 +44,8 @@ init () {
 	echo "Initializing tilde mrconfig.."
 	cat > $MR_CONFIG <<MR
 [DEFAULT]
-lib = cat $MR_LIB/* 
-include = cat $ENABLED_DIR/*
-fixups = BAD_FILES=(. .. .git .svn) 
-	 for file in .*; do 
-		bad=""; 
-		for i in ${BAD_FILES[@]}; do 
-			if [[ "$file" == "$i" ]]; then 
-				bad="true"; 
-				break; 
-			fi; 
-		done ; 
-		if [[ "$bad" = "true" ]]; then 
-			continue; 
-		else
-			echo "Linking $file" ; 
-		fi;  
-	 done
+include = cat $MR_LIB/* || true
+include = cat $ENABLED_DIR/* || true
 MR
 	echo "Initializing .mrtrust.."
 	if ! grep -e "^$MR_CONFIG$" $HOME/.mrtrust 2>&1 >/dev/null; then
@@ -70,7 +61,7 @@ add () {
 		echo "W: Module $module already enabled"
 		exit 2
 	elif [ -e $MODULE_DIR/$module ]; then
-		ln -s ../modules/$module $ENABLED_DIR/$module
+		ln -s $MODULE_DIR/$module $ENABLED_DIR/$module
 	else
 		echo "E: Couldn't find module $module ( $MODULE_DIR/$module) "
 		exit 2
@@ -79,6 +70,10 @@ add () {
 
 checkout () {
 	$MR checkout
+}
+
+update () {
+	$MR update
 }
 
 mr () {
@@ -112,6 +107,9 @@ case $1 in
 		;;
 	checkout)
 		checkout
+		;;
+	update)
+		update
 		;;
 	mr)
 		shift
