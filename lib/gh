@@ -1,0 +1,11 @@
+lib = 
+	gh_r_or_w_checkout () {
+		local path; path="$1"
+		local repo; repo="$2"
+		if ! git clone "git@github.com:${path}.git" "$repo"; then
+			git clone "git://github.com/${path}.git" "$repo"
+		fi
+	}
+
+		
+# vim:sw=8:sts=0:ts=8:noet

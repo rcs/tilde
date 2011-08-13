@@ -4,6 +4,7 @@ TILDE_DIR="$HOME/.tilde"
 
 BIN_DIR="$TILDE_DIR/bin"
 ENABLED_DIR="$TILDE_DIR/enabled"
+LIB_DIR="$TILDE_DIR/lib"
 MANIFEST_DIR="$TILDE_DIR/manifests"
 MODULE_DIR="$TILDE_DIR/modules"
 REPO_DIR="$TILDE_DIR/repos"
@@ -13,7 +14,6 @@ MR_CONFIG="$TILDE_DIR/mrconfig"
 MR_REPO="git://git.kitenet.net/mr"
 MR_DIR="$TILDE_DIR/mr"
 MR_LIB="$MR_DIR/lib"
-MR="$MR_DIR/mr -c $MR_CONFIG"
 
 shopt -s nullglob
 
@@ -37,6 +37,7 @@ init () {
 
 	mkdir -p "$BIN_DIR"
 	mkdir -p "$ENABLED_DIR"
+	mkdir -p "$LIB_DIR"
 	mkdir -p "$MANIFEST_DIR"
 	mkdir -p "$MODULE_DIR"
 	mkdir -p "$REPO_DIR"
@@ -52,10 +53,11 @@ init () {
 	cat > $MR_CONFIG <<MR
 [DEFAULT]
 include = cat $MR_LIB/* || true
+include = cat $LIB_DIR/* || true
 include = cat $ENABLED_DIR/* || true
 MR
 	echo "Initializing .mrtrust.."
-	if ! grep -e "^$MR_CONFIG$" $HOME/.mrtrust 2>&1 >/dev/null; then
+	if [ ! -f $HOME/.mrtrust ] ||  ! grep -e "^$MR_CONFIG$" $HOME/.mrtrust 2>&1 >/dev/null ; then
 		echo "$MR_CONFIG" >> ~/.mrtrust
 	fi
 
@@ -196,7 +198,7 @@ list () {
 
 
 update () {
-	$MR update
+	mr update
 	for module in $(installed); do
 		unlink_manifest_files $module
 		link_manifest_files $module
@@ -204,7 +206,11 @@ update () {
 }
 
 mr () {
-	$MR $@
+	# Go to repos directory, so mr doesn't operate on anything outside of that.
+	echo "Calling mr"
+	pushd $REPO_DIR > /dev/null
+	$MR_DIR/mr -c "$MR_CONFIG" $@
+	popd > /dev/null
 }
 
 
