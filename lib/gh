@@ -10,7 +10,7 @@ lib =
 		local repo; repo="$1"
 		pushd "$repo" > /dev/null
 		git submodule update --init
-		popd
+		popd > /dev/null
 	}
 
 		
