@@ -1,2 +1,2 @@
 Handle backing up non-tilde managed files in $HOME to a backup directory, restoring when module is removed.
-Research other methods of bootstrapping.
+Research other methods of bootstrapping. (curl or wget to get copies of files, albeit in readonly mode?)

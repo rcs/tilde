@@ -20,14 +20,16 @@ shopt -s nullglob
 
 usage () {
 	cat <<EOF
-Usage: $0 <command> <args..>
+Usage: $(basename $0) <command> <args..>
 
 Commands:
-init		Initialize tilde directories, git clone mr, and add mrconfig to .mrtrust
-add <module>	Link in <module> to be pulled in 
-checkout	Checkout existing repos (runs initialization commands e.g. linking to homedir)
-mr		passthru to the tilde configged mr
-
+init			Initialize tilde directories, git clone mr, and add mrconfig to .mrtrust
+update			Update enabled modules, including refreshing links
+list			List known modules available for installation
+installed		List installed modules
+install <module>	Install module	
+uninstall <module>	Uninstall module
+mr			For under-the-hood operation, passthrough to the mr command using tilde's configuration
 EOF
 }
 
