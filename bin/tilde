@@ -64,7 +64,7 @@ MR
 }
 
 install_module () {
-	local module="$1"
+	local module;module="$1"
 
 	if [ -e "$MANIFEST_DIR/$module" ]; then
 		echo "W: Module $module already installed"
@@ -80,11 +80,11 @@ install_module () {
 }
 
 link_manifest_files () {
-	local module="$1"
-	local manifest="$MANIFEST_DIR/$module"
-	local this_repo="$REPO_DIR/$module"
+	local module;module="$1"
+	local manifest;manifest="$MANIFEST_DIR/$module"
+	local this_repo;this_repo="$REPO_DIR/$module"
 
-	local bad_files=". .. .git .gitignore .gitmodules .mrconfig .svn"
+	local bad_files;bad_files=". .. .git .gitignore .gitmodules .mrconfig .svn"
 
 	manifest="$MANIFEST_DIR/$module"
 
@@ -110,8 +110,8 @@ link_manifest_files () {
 		fi
 
 		# Check existing manifests for target file, exclude current module's
-		local manifest_files=$(echo $MANIFEST_DIR/*)
-		local matching_manifest=""
+		local manifest_files;manifest_files=$(echo $MANIFEST_DIR/*)
+		local matching_manifest;matching_manifest=""
 		if [ ! -z "$manifest_files" ]; then 
 			matching_manifest=$(grep -l -e "^$base_file$" $manifest_files | grep -v -e "^$module$")
 		fi
@@ -137,12 +137,8 @@ link_manifest_files () {
 }
 
 uninstall () {
-	local module="$1"
-	local this_repo="$REPO_DIR/$module"
-
-	local bad_files=". .. .git .gitignore .gitmodules .mrconfig .svn"
-
-
+	local module;module="$1"
+	local this_repo;this_repo="$REPO_DIR/$module"
 
 	if [ ! -d "$this_repo" ]; then
 		echo "E: Couldn't find directory $this_repo"
@@ -154,9 +150,9 @@ uninstall () {
 }
 
 unlink_manifest_files () {
-	local module="$1"
-	local manifest="$MANIFEST_DIR/$module"
-	local this_repo="$REPO_DIR/$module"
+	local module;module="$1"
+	local manifest;manifest="$MANIFEST_DIR/$module"
+	local this_repo;this_repo="$REPO_DIR/$module"
 
 	if [ ! -f "$manifest" ]; then
 		echo "W: Couldn't find manifest $manifest, skipping unlink"
