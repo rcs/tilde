@@ -1,0 +1,2 @@
+Handle backing up non-tilde managed files in $HOME to a backup directory, restoring when module is removed.
+Research other methods of bootstrapping.
