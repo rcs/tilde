@@ -1,12 +1,14 @@
 #!/bin/bash
 
 TILDE_DIR="$HOME/.tilde"
-MODULE_DIR="$TILDE_DIR/modules"
+
+BIN_DIR="$TILDE_DIR/bin"
 ENABLED_DIR="$TILDE_DIR/enabled"
 MANIFEST_DIR="$TILDE_DIR/manifests"
+MODULE_DIR="$TILDE_DIR/modules"
 REPO_DIR="$TILDE_DIR/repos"
+
 MR_CONFIG="$TILDE_DIR/mrconfig"
-BIN_DIR="$TILDE_DIR/bin"
 
 MR_REPO="git://git.kitenet.net/mr"
 MR_DIR="$TILDE_DIR/mr"
@@ -32,10 +34,11 @@ EOF
 init () {
 	echo "Creating directories.."
 	mkdir -p "$TILDE_DIR"
-	mkdir -p "$MODULE_DIR"
-	mkdir -p "$ENABLED_DIR"
+
 	mkdir -p "$BIN_DIR"
+	mkdir -p "$ENABLED_DIR"
 	mkdir -p "$MANIFEST_DIR"
+	mkdir -p "$MODULE_DIR"
 	mkdir -p "$REPO_DIR"
 
 	echo "Cloning mr from $MR_REPO to $MR_DIR"
