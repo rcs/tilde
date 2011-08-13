@@ -1,0 +1,2 @@
+[repos/tmux]
+checkout = gh_r_or_w_checkout 'rcs/dotfiles-tmux' "$MR_REPO"
