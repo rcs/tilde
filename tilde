@@ -13,6 +13,8 @@ MR_DIR="$TILDE_DIR/mr"
 MR_LIB="$MR_DIR/lib"
 MR="$MR_DIR/mr -c $MR_CONFIG"
 
+shopt -s nullglob
+
 
 usage () {
 	cat <<EOF
@@ -56,32 +58,29 @@ MR
 
 }
 
-add () {
+install_module () {
 	local module=$1
 
 	if [ -e $ENABLED_DIR/$module ]; then
 		echo "W: Module $module already enabled"
 		exit 2
-	elif [ -e $MODULE_DIR/$module ]; then
-		ln -s $MODULE_DIR/$module $ENABLED_DIR/$module
-	else
+	elif [ ! -e $MODULE_DIR/$module ]; then
 		echo "E: Couldn't find module $module ( $MODULE_DIR/$module) "
 		exit 2
 	fi
+
+	link_manifest_files $module
+	ln -s $MODULE_DIR/$module $ENABLED_DIR/$module
 }
 
-link_to_home () {
+link_manifest_files () {
 	local module=$1
+	local manifest="$MANIFEST_DIR/$module"
 	local this_repo="$REPO_DIR/$module"
 
 	local bad_files=". .. .git .gitignore .gitmodules .mrconfig .svn"
 
 	manifest=$MANIFEST_DIR/$module
-
-	if [ -e $manifest ]; then
-		echo "E: Manifest $manifest already exists"
-		exit
-	fi
 
 	if [ ! -d "$this_repo" ]; then
 		echo "E: Couldn't find directory $this_repo"
@@ -89,7 +88,7 @@ link_to_home () {
 	fi
 
 	to_link=()
-	pushd "$this_repo"
+	pushd "$this_repo" > /dev/null
 	for file in .*; do 
 		base_file=$(basename $file)
 		# Check to make sure the filename isn't in the exclude list, skip to next if it is
@@ -104,35 +103,100 @@ link_to_home () {
 			continue; 
 		fi
 
-		# Check existing manifests for file
-		matching_manifest=$(grep -l -e "^$base_file$" $MANIFEST_DIR/*)
-
-		if [[ "$matching_manifest" = "" ]]; then
-			to_link=("${to_link[@]}" $base_file)
-		else
-			echo "E: Found matching $base_file in manifest $matching_manifest, aborting"
-			exit 2
+		# Check existing manifests for target file, exclude current module's
+		local manifest_files=$(echo $MANIFEST_DIR/*)
+		local matching_manifest=""
+		if [ ! -z "$manifest_files" ]; then 
+			matching_manifest=$(grep -l -e "^$base_file$" $manifest_files | grep -v -e "^$module$")
 		fi
 
-		if [ -e "$HOME/$base_file" -o -L "$HOME/$base_file" ]; then
-			echo "E: Found $base_file already existing in home. Aborting"
-			exit 2
+		if [[ ! "$matching_manifest" = "" ]]; then
+			echo "E: Found matching $base_file in manifest $matching_manifest, aborting the linking of $module"
+			return
 		fi
+
+		# Check existence and link status, as a link to a non-existent file fails the -e check
+		if [[ (-e "$HOME/$base_file" || -L "$HOME/$base_file") && ( ! $(readlink $HOME/$base_file) =~ ^$this_repo ) ]]; then
+			echo "E: Found $base_file already existing in home, and not ours. Aborting the linking of $module"
+			return
+		fi
+
+		to_link=("${to_link[@]}" $base_file)
 	done
-	popd
+	popd > /dev/null
 	for linker in ${to_link[@]}; do
-		set -o nounset
 		ln -s "$this_repo/$linker" $HOME
 		echo "$linker" >> $manifest
 	done
 }
 
-checkout () {
-	$MR checkout
+uninstall () {
+	local module=$1
+	local this_repo="$REPO_DIR/$module"
+
+	local bad_files=". .. .git .gitignore .gitmodules .mrconfig .svn"
+
+
+
+	if [ ! -d "$this_repo" ]; then
+		echo "E: Couldn't find directory $this_repo"
+		exit 2
+	fi
+
+	unlink_manifest_files "$module"
+	echo "Removing enabled"
+	rm "$ENABLED_DIR/$module"
 }
+
+unlink_manifest_files () {
+	local module=$1
+	local manifest="$MANIFEST_DIR/$module"
+	local this_repo="$REPO_DIR/$module"
+
+	if [ ! -f "$manifest" ]; then
+		echo "W: Couldn't find manifest $manifest, skipping unlink"
+		return
+	fi
+
+	to_remove=()
+	for linked in $(cat "$manifest"); do
+		home_file="$HOME/$linked"
+		if [ ! -L "$home_file" ]; then
+			echo "W: $home_file is not a symbolic link, probably not ours, leaving it alone"
+			continue
+		fi
+
+		if [[ ! $(readlink $home_file) =~ ^$this_repo ]]; then
+			echo "W: $home_file not linked into this repo, leaving it alone."
+			continue
+		fi
+
+		to_remove=("${to_remove[@]}" $home_file)
+	done
+
+	if [[ ${#to_remove[@]} > 0 ]]; then
+		for file in ${to_remove[@]}; do
+			rm "$file"
+		done
+	fi
+	rm "$manifest"
+}
+
+installed () {
+	ls "$ENABLED_DIR"
+}
+
+list () {
+	ls "$MODULE_DIR"
+}
+
 
 update () {
 	$MR update
+	for module in $(installed); do
+		unlink_manifest_files $module
+		link_manifest_files $module
+	done
 }
 
 mr () {
@@ -160,13 +224,6 @@ case $1 in
 	init)
 		init
 		;;
-	add)
-		shift
-		add $@
-		;;
-	checkout)
-		checkout
-		;;
 	update)
 		update
 		;;
@@ -174,9 +231,21 @@ case $1 in
 		shift
 		mr $@
 		;;
-	link_to_home)
+	install)
 		shift
-		link_to_home $@
+		install_module $@
+		;;
+	uninstall)
+		shift
+		uninstall $@
+		;;
+	installed)
+		shift
+		echo $(installed)
+		;;
+	list)
+		shift
+		echo $(list)
 		;;
 	*)
 		echo "Argument $1 not understood."
