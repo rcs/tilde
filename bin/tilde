@@ -72,8 +72,9 @@ install_module () {
 		exit 2
 	fi
 
-	link_manifest_files $module
 	ln -s $MODULE_DIR/$module $ENABLED_DIR/$module
+	update
+	link_manifest_files $module
 }
 
 link_manifest_files () {
@@ -186,7 +187,7 @@ unlink_manifest_files () {
 }
 
 installed () {
-	ls "$ENABLED_DIR"
+	ls "$MANIFEST_DIR"
 }
 
 list () {
