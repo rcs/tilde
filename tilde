@@ -4,6 +4,7 @@ TILDE_DIR="$HOME/.tilde"
 MODULE_DIR="$TILDE_DIR/modules"
 ENABLED_DIR="$TILDE_DIR/enabled"
 MANIFEST_DIR="$TILDE_DIR/manifests"
+REPO_DIR="$TILDE_DIR/repos"
 MR_CONFIG="$TILDE_DIR/mrconfig"
 BIN_DIR="$TILDE_DIR/bin"
 
@@ -33,6 +34,7 @@ init () {
 	mkdir -p "$ENABLED_DIR"
 	mkdir -p "$BIN_DIR"
 	mkdir -p "$MANIFEST_DIR"
+	mkdir -p "$REPO_DIR"
 
 	echo "Cloning mr from $MR_REPO to $MR_DIR"
 	if [ ! -e "$MR_DIR" ]; then
@@ -66,6 +68,63 @@ add () {
 		echo "E: Couldn't find module $module ( $MODULE_DIR/$module) "
 		exit 2
 	fi
+}
+
+link_to_home () {
+	local module=$1
+	local this_repo="$REPO_DIR/$module"
+
+	local bad_files=". .. .git .gitignore .gitmodules .mrconfig .svn"
+
+	manifest=$MANIFEST_DIR/$module
+
+	if [ -e $manifest ]; then
+		echo "E: Manifest $manifest already exists"
+		exit
+	fi
+
+	if [ ! -d "$this_repo" ]; then
+		echo "E: Couldn't find directory $this_repo"
+		exit
+	fi
+
+	to_link=()
+	pushd "$this_repo"
+	for file in .*; do 
+		base_file=$(basename $file)
+		# Check to make sure the filename isn't in the exclude list, skip to next if it is
+		bad=""; 
+		for excluded in $bad_files; do 
+			if [[ $(basename "$file") = "$excluded" ]]; then 
+				bad="true"; 
+				break; 
+			fi; 
+		done 
+		if [[ "$bad" = "true" ]]; then 
+			continue; 
+		fi
+
+		# Check existing manifests for file
+		matching_manifest=$(grep -l -e "^$base_file$" $MANIFEST_DIR/*)
+
+		if [[ "$matching_manifest" = "" ]]; then
+			to_link=("${to_link[@]}" $base_file)
+		else
+			echo "E: Found matching $base_file in manifest $matching_manifest, aborting"
+			exit 2
+		fi
+
+		if [ -e "$HOME/$base_file" -o -L "$HOME/$base_file" ]; then
+			echo "E: Found $base_file already existing in home. Aborting"
+			exit 2
+		fi
+	done
+	popd
+	for linker in ${to_link[@]}; do
+		set -o nounset
+		ln -s "$this_repo/$linker" $HOME
+		echo "$linker" >> $manifest
+	done
 }
 
 checkout () {
@@ -114,6 +173,10 @@ case $1 in
 	mr)
 		shift
 		mr $@
+		;;
+	link_to_home)
+		shift
+		link_to_home $@
 		;;
 	*)
 		echo "Argument $1 not understood."
