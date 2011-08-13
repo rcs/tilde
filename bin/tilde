@@ -76,7 +76,6 @@ install_module () {
 
 	ln -s "$MODULE_DIR/$module" "$ENABLED_DIR/$module"
 	update
-	link_manifest_files $module
 }
 
 link_manifest_files () {
