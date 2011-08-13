@@ -1,3 +1,3 @@
 [repos/zsh]
 checkout = git clone 'git@github.com:rcs/dotfiles-zsh.git' "$MR_REPO"
-fixups = git submodule update --init
+fixups = update_submodules "$MR_REPO"
