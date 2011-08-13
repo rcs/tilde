@@ -50,43 +50,43 @@ init () {
 	fi
 
 	echo "Initializing tilde mrconfig.."
-	cat > $MR_CONFIG <<MR
+	cat > "$MR_CONFIG" <<MR
 [DEFAULT]
 include = cat $MR_LIB/* || true
 include = cat $LIB_DIR/* || true
 include = cat $ENABLED_DIR/* || true
 MR
 	echo "Initializing .mrtrust.."
-	if [ ! -f $HOME/.mrtrust ] ||  ! grep -e "^$MR_CONFIG$" $HOME/.mrtrust 2>&1 >/dev/null ; then
+	if [ ! -f "$HOME/.mrtrust" ] ||  ! grep -e "^$MR_CONFIG$" "$HOME/.mrtrust" 2>&1 >/dev/null ; then
 		echo "$MR_CONFIG" >> ~/.mrtrust
 	fi
 
 }
 
 install_module () {
-	local module=$1
+	local module="$1"
 
-	if [ -e $ENABLED_DIR/$module ]; then
-		echo "W: Module $module already enabled"
+	if [ -e "$MANIFEST_DIR/$module" ]; then
+		echo "W: Module $module already installed"
 		exit 2
-	elif [ ! -e $MODULE_DIR/$module ]; then
+	elif [ ! -e "$MODULE_DIR/$module" ]; then
 		echo "E: Couldn't find module $module ( $MODULE_DIR/$module) "
 		exit 2
 	fi
 
-	ln -s $MODULE_DIR/$module $ENABLED_DIR/$module
+	ln -s "$MODULE_DIR/$module" "$ENABLED_DIR/$module"
 	update
 	link_manifest_files $module
 }
 
 link_manifest_files () {
-	local module=$1
+	local module="$1"
 	local manifest="$MANIFEST_DIR/$module"
 	local this_repo="$REPO_DIR/$module"
 
 	local bad_files=". .. .git .gitignore .gitmodules .mrconfig .svn"
 
-	manifest=$MANIFEST_DIR/$module
+	manifest="$MANIFEST_DIR/$module"
 
 	if [ ! -d "$this_repo" ]; then
 		echo "E: Couldn't find directory $this_repo"
@@ -96,11 +96,11 @@ link_manifest_files () {
 	to_link=()
 	pushd "$this_repo" > /dev/null
 	for file in .*; do 
-		base_file=$(basename $file)
+		base_file="$(basename $file)"
 		# Check to make sure the filename isn't in the exclude list, skip to next if it is
 		bad=""; 
 		for excluded in $bad_files; do 
-			if [[ $(basename "$file") = "$excluded" ]]; then 
+			if [[ "$(basename "$file")" = "$excluded" ]]; then 
 				bad="true"; 
 				break; 
 			fi; 
@@ -122,12 +122,12 @@ link_manifest_files () {
 		fi
 
 		# Check existence and link status, as a link to a non-existent file fails the -e check
-		if [[ (-e "$HOME/$base_file" || -L "$HOME/$base_file") && ( ! $(readlink $HOME/$base_file) =~ ^$this_repo ) ]]; then
+		if [[ (-e "$HOME/$base_file" || -L "$HOME/$base_file") && ( ! $(readlink "$HOME/$base_file") =~ ^$this_repo ) ]]; then
 			echo "E: Found $base_file already existing in home, and not ours. Aborting the linking of $module"
 			return
 		fi
 
-		to_link=("${to_link[@]}" $base_file)
+		to_link=("${to_link[@]}" "$base_file")
 	done
 	popd > /dev/null
 	for linker in ${to_link[@]}; do
@@ -137,7 +137,7 @@ link_manifest_files () {
 }
 
 uninstall () {
-	local module=$1
+	local module="$1"
 	local this_repo="$REPO_DIR/$module"
 
 	local bad_files=". .. .git .gitignore .gitmodules .mrconfig .svn"
@@ -150,12 +150,11 @@ uninstall () {
 	fi
 
 	unlink_manifest_files "$module"
-	echo "Removing enabled"
 	rm "$ENABLED_DIR/$module"
 }
 
 unlink_manifest_files () {
-	local module=$1
+	local module="$1"
 	local manifest="$MANIFEST_DIR/$module"
 	local this_repo="$REPO_DIR/$module"
 
@@ -172,12 +171,12 @@ unlink_manifest_files () {
 			continue
 		fi
 
-		if [[ ! $(readlink $home_file) =~ ^$this_repo ]]; then
+		if [[ ! $(readlink "$home_file") =~ ^$this_repo ]]; then
 			echo "W: $home_file not linked into this repo, leaving it alone."
 			continue
 		fi
 
-		to_remove=("${to_remove[@]}" $home_file)
+		to_remove=("${to_remove[@]}" "$home_file")
 	done
 
 	if [[ ${#to_remove[@]} > 0 ]]; then
@@ -200,15 +199,15 @@ list () {
 update () {
 	mr update
 	for module in $(installed); do
-		unlink_manifest_files $module
-		link_manifest_files $module
+		unlink_manifest_files "$module"
+		link_manifest_files "$module"
 	done
 }
 
 mr () {
 	# Go to repos directory, so mr doesn't operate on anything outside of that.
 	echo "Calling mr"
-	pushd $REPO_DIR > /dev/null
+	pushd "$REPO_DIR" > /dev/null
 	$MR_DIR/mr -c "$MR_CONFIG" $@
 	popd > /dev/null
 }
