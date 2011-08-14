@@ -1,10 +1,6 @@
 #!/bin/bash
 
 TILDE_DIR="$HOME/.tilde"
-if ! which git > /dev/null; then
-	echo "Git's required to bootstrap tilde"
-	exit 2
-fi
 
 dl_gh_tarball () {
 	local path; path="$1"
