@@ -29,9 +29,9 @@ lib =
 	}
 	update_submodules () {
 		local repo; repo="$1"
-		pushd "$repo" > /dev/null
-		git submodule update --init
-		popd > /dev/null
+		if which git > /dev/null; then
+			(cd $repo; git submodule update --init)
+		fi
 	}
 
 		
