@@ -12,6 +12,7 @@ REPO_DIR="$TILDE_DIR/repos"
 MR_CONFIG="$TILDE_DIR/mrconfig"
 
 MR_REPO="git://git.kitenet.net/mr"
+MR_TARBALL_URL="http://ftp.en.debian.org/debian/pool/main/m/mr/mr_1.04.tar.gz"
 MR_DIR="$TILDE_DIR/mr"
 MR_LIB="$MR_DIR/lib"
 
@@ -46,7 +47,19 @@ init () {
 
 	echo "Cloning mr from $MR_REPO to $MR_DIR"
 	if [ ! -e "$MR_DIR" ]; then
-		git clone "$MR_REPO" "$MR_DIR"
+		if which git > /dev/null; then 
+			git clone "$MR_REPO" "$MR_DIR"
+		else
+			TARBALL=$(mktemp -t tilde.XXXXXXX)
+			if which curl > /dev/null; then
+				curl -o "$TARBALL" -L "$MR_TARBALL_URL"
+			elif which wget > /dev/null; then
+				wget -O "$TARBALL" "$MR_TARBALL_URL"
+			else
+				echo "None of git, curl, wget installed. You're on your own."
+				exit 2
+			fi
+			tar -xzf "$TARBALL" -C "$TILDE_DIR"
 	else
 		echo "W: $MR_DIR exists, not cloning mr repo into it"
 	fi
