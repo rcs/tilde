@@ -60,6 +60,7 @@ init () {
 				exit 2
 			fi
 			tar -xzf "$TARBALL" -C "$TILDE_DIR"
+		fi
 	else
 		echo "W: $MR_DIR exists, not cloning mr repo into it"
 	fi
