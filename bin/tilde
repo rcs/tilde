@@ -12,7 +12,7 @@ REPO_DIR="$TILDE_DIR/repos"
 MR_CONFIG="$TILDE_DIR/mrconfig"
 
 MR_REPO="git://git.kitenet.net/mr"
-MR_TARBALL_URL="http://ftp.en.debian.org/debian/pool/main/m/mr/mr_1.04.tar.gz"
+MR_TARBALL_URL="http://ftp.de.debian.org/debian/pool/main/m/mr/mr_1.04.tar.gz"
 MR_DIR="$TILDE_DIR/mr"
 MR_LIB="$MR_DIR/lib"
 
