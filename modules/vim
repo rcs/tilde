@@ -1,3 +1,3 @@
 [repos/vim]
-checkout = gh_r_or_w_checkout 'rcs/dotfiles-vim' "$MR_REPO"
+checkout = gh_rw_or_tarball_checkout 'rcs/dotfiles-vim' "$MR_REPO"
 fixups = update_submodules "$MR_REPO"
